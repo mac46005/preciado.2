@@ -8,6 +8,20 @@
 #include <sys/shm.h>
 #include <time.h>
 
+int processGetOpt(int argc, char* argv[]);
+void child();
+void parent();
+void incrementClock();
+void printProcessTable();
+void exitMessage();
+void helpMessage();
+void optargError(char* message, char* value);
+int digits_only(const char* string);
+
+
+
+
+
 
 #define SHMKEY 466600
 #define BUFF_SZ sizeof(int)
@@ -33,12 +47,30 @@ struct PCB processTable[20];
 
 int main(int argc, char* argv[]){
     if(processGetOpt(argc, argv) == 0){
-
+        /*
+        while(stillChildrenToLaunch){
+            incrementClock();
+            Every half a second, output the process table to the screen
+            checkIfChildHasTerminated();
+            if(childHasTerminated){
+                updatePCBOfTerminatedChild;
+                possiblyLaunchNewChild(obeying process limits);
+            }
+        }
+        */
     }else{
         helpMessage();
-        exit 1;
+        return 1;
     }
+    return 0;
 }
+
+
+
+
+
+
+
 
 int processGetOpt(int argc, char* argv[]){
     const char* options = "hn:s:t:";
@@ -49,12 +81,12 @@ int processGetOpt(int argc, char* argv[]){
         switch(opt){
             case 'h':
                 helpMessage();
-                exit 1;
+                exit = 1;
                 break;
             case 'n':
                 if(digits_only(optarg) == 0){
                     proc = atoi(optarg);
-                    exit 0;
+                    exit = 0;
                 }else{
                     fprintf(stderr, "");
                     exit = 1;
@@ -87,15 +119,55 @@ int processGetOpt(int argc, char* argv[]){
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 void child(){
+    const char* program = "./worker";
+    const char* argv = {program, NULL};
+    execv(program,argv);
+}
+
+
+
+void parent(){
 
 }
 
 
 
 
-void parent(){
+void incrementClock(){
 
+}
+
+void printProcessTable(){
+    /*
+    OSS PID: 6576 SysClockS: 7 SysClockNano: 5000000
+    Process Table:
+    Entry Occupied PID  StartS StartN
+    0     1        6577 5      50000000
+    1     0        0    0      0
+    2     0        0    0      0
+    ...
+    19    0        0    0      0
+    */
+   int i;
+   printf("Process Table:");
+   printf("Entry\tOccupied\tPID\tStartS\tStartN\n")
+   for(i = 0; i < 20; i++){
+        struct PCB child = processTable[i];
+        printf("%d\t%d\t%d\t%d\t%d\n", i, child.occupied, child.pid, child.startSecond, child.startNano);
+   }
 }
 
 void exitMessage(){
