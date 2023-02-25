@@ -32,35 +32,37 @@ int main(int argc, char* argv[]){
 
     if(process_getopt(argc, argv) == 0){
 
-        while(simul != 0){
+        while(seconds != 5){
             increment_clock();
-            //every half second, output process
-            //check if child has terminated
-            int status;
-            waitpid(pid, &status, 0);
-            if(WIFEXITED(status)){
-                if(pid != NULL){
-                    process_table[count].occupied = 0;
-                }
-                count++;
-                pid = fork();
-                if(pid == 0){
-                    char* prgnm = "./worker";
-                    char sec_str[12];
-                    char nano_str[12];
-                    sprintf(sec_str, "%d", seconds);
-                    sprintf(nano_str, "%d", nanoseconds);
-                    char* args[] = {prgnm, sec_str, nano_str,NULL};
-                    execv(prgnm, args);
-
-                }else{
-                    struct PCB new_p;
-                    new_p.pid = pid;
-                    new_p.start_nano = seconds;
-                    new_p.start_seconds = nanoseconds;
-                    new_p.occupied = count;
-                }
+            if(nanoseconds == 500000000){
+                print_process_table();
             }
+            usleep(1);
+            // int status;
+            // waitpid(pid, &status, 0);
+            // if(WIFEXITED(status)){
+            //     if(pid != NULL){
+            //         process_table[count].occupied = 0;
+            //     }
+            //     count++;
+            //     pid = fork();
+            //     if(pid == 0){
+            //         char* prgnm = "./worker";
+            //         char sec_str[12];
+            //         char nano_str[12];
+            //         sprintf(sec_str, "%d", seconds);
+            //         sprintf(nano_str, "%d", nanoseconds);
+            //         char* args[] = {prgnm, sec_str, nano_str,NULL};
+            //         execv(prgnm, args);
+
+            //     }else{
+            //         struct PCB new_p;
+            //         new_p.pid = pid;
+            //         new_p.start_nano = seconds;
+            //         new_p.start_seconds = nanoseconds;
+            //         new_p.occupied = count;
+            //     }
+            // }
         }
     }else{
         help_message();
@@ -178,15 +180,15 @@ void print_process_table(){
     printf("Entry\tOccupied\tPID\tStarts\tStartN\n");
     int i;
     for(i = 0; i < 20; i++){
-        printf("%d\t%d\t%d\t%d\t%d\n",i,process_table[i].occupied,process_table[i].pid,process_table[i].start_seconds,process_table[i].start_nano);
+        printf("%d\t%d\t\t%d\t%d\t%d\n",i,process_table[i].occupied,process_table[i].pid,process_table[i].start_seconds,process_table[i].start_nano);
     }
 }
 void increment_clock(){
-    if(nanoseconds >= 99999999){
+    if(nanoseconds > 999999999){
         seconds++;
         nanoseconds = 0;
     }else{
-        nanoseconds += 11111;
+        nanoseconds += 10000;
     }
 }
 ///END/////////////////////////////////////////
