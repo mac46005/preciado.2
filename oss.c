@@ -139,7 +139,8 @@ void help_message(){
 int digits_only(const char* string){
     int exit = 1;
     int i;
-    for(i = 0; i < strlen(string) - 1; i++){
+    int length = strlen(string);
+    for(i = 0; i < length; i++){
         if(string[i] >= '0' && string[i] <= '9'){
             exit = 0;
         }else{
