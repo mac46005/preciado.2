@@ -23,62 +23,84 @@ struct PCB{
     int start_seconds;
     int start_nano;
 };
-
+// int shmid1 = shmget(SHMKEY_1, BUff_SZ, 0777 | IPC_CREAT);
+//         printf("key :%d\n" ,shmid1);
+//         if(shmid1 == -1){
+//             fprintf(stderr, "Error in shmget\n");
+//         }
+//         int* paddr = (int*)(shmat(shmid1, 0,0));
+//         shmdt(paddr);
+//         shmctl(shmid1, IPC_RMID, NULL);
 struct PCB process_table[20];
 
 int main(int argc, char* argv[]){
     pid_t pid;
     int count = 0;
-
+    int status;
+    pid_t terminated_child;
+    pid_t simul_pid[simul];
+    int a_child_terminated = 0;
     if(process_getopt(argc, argv) == 0){
-
-        while(seconds != 10){
+        while(proc != 0){
             increment_clock();
-            // if (nanoseconds == 500000000)
-            // {
-            //     print_process_table();
-            // }
-            int status;
-            int pid = fork();
-            if(pid == 0){
-                char* prgnm = "./worker";
-                char* args[] = {prgnm, "4", "400000", NULL};
-                execv(prgnm, args);
-                exit(0);
-            }else{
-                wait(NULL);
+            int shdm_id = shmget(SHMKEY_1, BUff_SZ, 0777 | IPC_CREAT);
+            int* paddr = (int*)(shmat(shdm_id, 0, 0));
+            paddr[0] = seconds;
+            paddr[1] = nanoseconds;
+
+
+
+
+            if(simul != 0){
+                pid = fork();
+                if(pid == 0){
+                    child();
+                }
+                    struct PCB new_child;
+                    new_child.occupied = 1;
+                    printf("child pid %d\n", pid);
+                    sleep(1);
+                    new_child.pid = pid;
+                    new_child.start_seconds = seconds;
+                    new_child.start_nano = nanoseconds;
+                    process_table[count] = new_child;
+                    simul_pid[count] = pid;
+                    count++;
+                    proc--;
+                
             }
-            //waitpid(-1, &status, WNOHANG);
-            // if(waitpid(-1, &status, WNOHANG) == pid){
 
-            //     pid = fork();
-            //     if(pid == 0){
-            //         char* prgnm = "./worker";
-            //         char* args[] = {prgnm,"3", "4",NULL};
-            //         execv(prgnm, args);
-            //     }else{
-                    
-            //         usleep(100);
-                    
-            //         int i;
-            //         if(process_table[count].pid == pid){
-            //             process_table[count].occupied = 0;
-            //         }
-            //         struct PCB new_pcb;
-            //         new_pcb.occupied = 1;
-            //         new_pcb.pid = pid;
-            //         new_pcb.start_seconds = seconds;
-            //         new_pcb.start_nano = nanoseconds;
-
-                    
-
-            //         process_table[count] = new_pcb;
-            //         simul--;
-            //         count++;
-                    
-            //         printf("parent done?\n");
-            //     }
-            //}
+            int i;
+            for(i = 0; i <= count; i++){
+                if((terminated_child = waitpid(simul_pid[count],&status, WNOHANG)) == 0){
+                    a_child_terminated = 0;
+                    terminated_child = simul_pid[count];
+                    print_process_table();
+                }
+            }
+            if(a_child_terminated == 0){
+                printf("a child terminated: %d\n", terminated_child);
+                for(i = 0;i < count; i++){
+                    if(process_table[i].pid = terminated_child){
+                        process_table[i].occupied = 0;
+                        print_process_table();
+                    }
+                }
+                if(simul == 0){
+                    pid = fork();
+                    if(pid == 0){
+                        child();
+                    }else{
+                        struct PCB new_child;
+                        new_child.occupied = 1;
+                        new_child.pid = pid;
+                        new_child.start_seconds = seconds;
+                        new_child.start_nano = nanoseconds;
+                        count++;
+                        wait(&status);
+                    }
+                }
+            }
         }
     }else{
         help_message();
@@ -177,7 +199,6 @@ void child(){
     sprintf(nano_str, "%d", nanoseconds);
     char* args[] = {prgnm, sec_str, nano_str, NULL};
     execv(prgnm, args);
-    exit(0);
 }
 void parent(pid_t child, int process_num){
     struct PCB childBlock;
@@ -206,24 +227,5 @@ void increment_clock(){
     }else{
         nanoseconds += 10000;
     }
-
-    int shmid1 = shmget(SHMKEY_1, BUff_SZ, IPC_CREAT);
-    printf("key :%d\n" ,shmid1);
-    if(shmid1 == -1){
-        fprintf(stderr, "Error in shmget\n");
-        return;
-    }
-    int* paddr = (int*)(shmat(shmid1, 0,0));
-    printf("Writing to shdmem\n");
-    int clock[2];
-    clock[0] = seconds;
-    clock[1] = nanoseconds;
-    int i;
-    for(i = 0; i < 2; i++){
-        *paddr = clock[i];
-    }
-    shmdt(paddr);
-    shmctl(shmid1, IPC_RMID, NULL);
-    sleep(10);
 }
 ///END/////////////////////////////////////////

@@ -12,8 +12,8 @@ int main(int argc, char* argv[]){
     }
 
     int* cint = (int*)(shmat(shmid, 0, 0));
-    printf("seconds from shrdmem %d\n", *cint);
-    printf("nanoseconds from shrdmem %d\n", *cint);
+    printf("seconds from shrdmem %d\n", cint[0]);
+    printf("nanoseconds from shrdmem %d\n", cint[1]);
     // secondsStay = atoi(argv[1]);
     // nanoStay = atoi(argv[2]);
     printf("Child about to sleep\n");
