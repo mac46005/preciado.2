@@ -4,34 +4,37 @@
 #include <sys/shm.h>
 #include "shrdmem.h"
 
+void print_worker(int sys_sec, int sys_nano){
+    printf("WORKER PID:%d PPID:%d SysclockS:%d SysclockNano:%d\n", getpid(), getppid(), sys_sec, sys_nano);
+}
+
 int main(int argc, char* argv[]){
 
 
 
 
 
-    printf("seconds given: %s                ", argv[1]);
-    printf("nano given: %s\n", argv[2]);
-
+    
 
 
     int secondsStay, nanoStay;
-    int shmid = shmget(SHMKEY_1, BUff_SZ, 0777);
-    
+    int shmid = shmget(SHMKEY, BUff_SZ, 0666);
+
     if(shmid == -1){
         fprintf(stderr, "Child:...Error in shmget...\n");
         return 1;
     }
+    int* cint = (int*)(shmat(shmid, NULL, 0));
 
-    int* cint = (int*)(shmat(shmid, 0, 0));
-    printf("seconds from shrdmem %d\n", cint[0]);
-    printf("nanoseconds from shrdmem %d\n", cint[1]);
-    
-    // secondsStay = atoi(argv[1]);
-    // nanoStay = atoi(argv[2]);
-    printf("Child about to sleep\n");
-    sleep(7);
-    printf("Child done\n");
+
+    secondsStay = atoi(argv[1]);
+    nanoStay = atoi(argv[2]);
+    printf("Given rand sec: %d nano: %d\n", secondsStay, nanoStay);
+    print_worker(cint[0], cint[1]);
+
+    sleep(10);
+
+
     shmdt(cint);
     return 0;
 }

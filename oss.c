@@ -16,7 +16,6 @@
 #include <time.h>
 #include "igetopt_helper.h"
 #include "ioss.h"
-#include <math.h>
 #include "shrdmem.h"
 
 
@@ -57,12 +56,12 @@ struct PCB process_table[20];
 
 
 int getrandsec(){
-    srand(time(0));
+    srand(getpid());
     int num = (rand() % time_limit + 1);
     return num;
 }
 int getrandnano(){
-    srand(time(0));
+    srand(getpid());
     int num = (rand() % 999999999);
     return num;
 }
@@ -79,113 +78,45 @@ int getrandnano(){
 int main(int argc, char* argv[]){
     
     
+    
+    int status,count = 0, a_child_terminated = 0;
+
     pid_t pid;
-    int count = 0;
-    int status;
     pid_t terminated_child;
     pid_t simul_pid[simul];
-    int a_child_terminated = 0;
 
 
-
+    int shm_id = shmget((key_t)SHMKEY, BUff_SZ, 0666 | IPC_CREAT);
 
     if(process_getopt(argc, argv) == 0){
 
-        while(proc != 0){
-
-
+        while(simul != 0){
             increment_clock();
-            int shdm_id = shmget(SHMKEY_1, BUff_SZ, 0777 | IPC_CREAT);
-            int* paddr = (int*)(shmat(shdm_id, 0, 0));
+            int* paddr = (int*)shmat(shm_id, NULL, 0);
             paddr[0] = seconds;
             paddr[1] = nanoseconds;
-
-
-
-
-
-
-
-
-            //SIMULTANOUS PROCESS
-            if(simul != 0){
-                pid = fork();
-                if(pid == 0){
-                    child();
-                }else{
-
-                    struct PCB new_child = create_pcb(1, pid, seconds, nanoseconds);
-
-                    process_table[count] = new_child;
-
-                    simul_pid[count] = pid;
-
-
-                    count++;
-                    proc--;
-                    simul--;
+            pid = fork();
+            simul--;
+            if(pid == 0){
+                child();
+            }else{
+                struct PCB new_child = create_pcb(1, pid, seconds,nanoseconds);
+                process_table[count] = new_child;
+                //print_process_table();
+                if((terminated_child = waitpid(pid, &status, WNOHANG)) == 0){
+                    a_child_terminated = 1;
+                    process_table[count].occupied = 0;
                 }
+                //print_process_table();
+                count++;
             }
-
-
-
-
-            //Check if child terminated
-            int i;
-            for(i = 0; i <= count; i++){
-                if((terminated_child = waitpid(simul_pid[count],&status, WNOHANG)) == 0){
-                    a_child_terminated = 0;
-                }
-            }
-
-
-
-
-            //Actions if child terminated
-            if(a_child_terminated == 0){
-
-                for(i = 0;i < count; i++){
-
-                    if(process_table[i].pid = terminated_child){
-
-                        process_table[i].occupied = 0;
-
-                    }
-
-                }
-
-                //Create non-simultanous children
-                if(simul == 0 && proc != 0){
-
-                    pid = fork();
-
-                    if(pid == 0){
-
-                        child();
-
-                    }else{
-
-                        struct PCB new_child = create_pcb(1, pid, seconds, nanoseconds);
-
-                        process_table[count] = new_child;
-
-                        count++;
-                        proc--;
-
-                        wait(&status);
-                    }
-                }
-            }
-
-
-
-            shmdt(paddr);
-            shmctl(shdm_id, IPC_RMID, NULL);
         }
+        
     }else{
         help_message();
         exit(1);
     }
+    
     exit(0);
 }
 
