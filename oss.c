@@ -32,37 +32,53 @@ int main(int argc, char* argv[]){
 
     if(process_getopt(argc, argv) == 0){
 
-        while(seconds != 5){
+        while(seconds != 10){
             increment_clock();
-            if(nanoseconds == 500000000){
-                print_process_table();
+            // if (nanoseconds == 500000000)
+            // {
+            //     print_process_table();
+            // }
+            int status;
+            int pid = fork();
+            if(pid == 0){
+                char* prgnm = "./worker";
+                char* args[] = {prgnm, "4", "400000", NULL};
+                execv(prgnm, args);
+                exit(0);
+            }else{
+                wait(NULL);
             }
-            usleep(1);
-            // int status;
-            // waitpid(pid, &status, 0);
-            // if(WIFEXITED(status)){
-            //     if(pid != NULL){
-            //         process_table[count].occupied = 0;
-            //     }
-            //     count++;
+            //waitpid(-1, &status, WNOHANG);
+            // if(waitpid(-1, &status, WNOHANG) == pid){
+
             //     pid = fork();
             //     if(pid == 0){
             //         char* prgnm = "./worker";
-            //         char sec_str[12];
-            //         char nano_str[12];
-            //         sprintf(sec_str, "%d", seconds);
-            //         sprintf(nano_str, "%d", nanoseconds);
-            //         char* args[] = {prgnm, sec_str, nano_str,NULL};
+            //         char* args[] = {prgnm,"3", "4",NULL};
             //         execv(prgnm, args);
-
             //     }else{
-            //         struct PCB new_p;
-            //         new_p.pid = pid;
-            //         new_p.start_nano = seconds;
-            //         new_p.start_seconds = nanoseconds;
-            //         new_p.occupied = count;
+                    
+            //         usleep(100);
+                    
+            //         int i;
+            //         if(process_table[count].pid == pid){
+            //             process_table[count].occupied = 0;
+            //         }
+            //         struct PCB new_pcb;
+            //         new_pcb.occupied = 1;
+            //         new_pcb.pid = pid;
+            //         new_pcb.start_seconds = seconds;
+            //         new_pcb.start_nano = nanoseconds;
+
+                    
+
+            //         process_table[count] = new_pcb;
+            //         simul--;
+            //         count++;
+                    
+            //         printf("parent done?\n");
             //     }
-            // }
+            //}
         }
     }else{
         help_message();
@@ -190,5 +206,24 @@ void increment_clock(){
     }else{
         nanoseconds += 10000;
     }
+
+    int shmid1 = shmget(SHMKEY_1, BUff_SZ, IPC_CREAT);
+    printf("key :%d\n" ,shmid1);
+    if(shmid1 == -1){
+        fprintf(stderr, "Error in shmget\n");
+        return;
+    }
+    int* paddr = (int*)(shmat(shmid1, 0,0));
+    printf("Writing to shdmem\n");
+    int clock[2];
+    clock[0] = seconds;
+    clock[1] = nanoseconds;
+    int i;
+    for(i = 0; i < 2; i++){
+        *paddr = clock[i];
+    }
+    shmdt(paddr);
+    shmctl(shmid1, IPC_RMID, NULL);
+    sleep(10);
 }
 ///END/////////////////////////////////////////
